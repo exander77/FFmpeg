@@ -75,6 +75,11 @@ typedef struct XCBGrabContext {
     const char *framerate;
 
     int has_shm;
+
+    char *focus_name;
+    char *grab_name;
+    xcb_window_t focus_window;
+    xcb_window_t grab_window;
 } XCBGrabContext;
 
 #define FOLLOW_CENTER -1
@@ -156,9 +161,13 @@ static int xcbgrab_frame(AVFormatContext *s, AVPacket *pkt)
     uint8_t *data;
     int length, ret;
 
-    iq  = xcb_get_image(c->conn, XCB_IMAGE_FORMAT_Z_PIXMAP, drawable,
-                        c->x, c->y, c->width, c->height, ~0);
-
+    if (c->focus_name) {
+        iq  = xcb_get_image(c->conn, XCB_IMAGE_FORMAT_Z_PIXMAP, c->grab_window,
+                            0, 0, c->width, c->height, ~0);
+    } else {
+        iq  = xcb_get_image(c->conn, XCB_IMAGE_FORMAT_Z_PIXMAP, drawable,
+                            c->x, c->y, c->width, c->height, ~0);
+    }
     img = xcb_get_image_reply(c->conn, iq, &e);
 
     if (e) {
@@ -261,9 +270,18 @@ static int xcbgrab_frame_shm(AVFormatContext *s, AVPacket *pkt)
     if (ret < 0)
         return ret;
 
-    iq = xcb_shm_get_image(c->conn, drawable,
-                           c->x, c->y, c->width, c->height, ~0,
-                           XCB_IMAGE_FORMAT_Z_PIXMAP, c->segment, 0);
+    if (c->focus_name) {
+        iq = xcb_shm_get_image(c->conn, c->grab_window,
+                               0, 0, c->width, c->height, ~0,
+                               XCB_IMAGE_FORMAT_Z_PIXMAP, c->segment, 0);
+    } else {
+        iq = xcb_shm_get_image(c->conn, drawable,
+                               c->x, c->y, c->width, c->height, ~0,
+                               XCB_IMAGE_FORMAT_Z_PIXMAP, c->segment, 0);
+    }
+
+    xcb_shm_detach(c->conn, c->segment);
+
     img = xcb_shm_get_image_reply(c->conn, iq, &e);
 
     xcb_flush(c->conn);
@@ -329,8 +347,13 @@ static void xcbgrab_draw_mouse(AVFormatContext *s, AVPacket *pkt,
     if (!cursor)
         return;
 
-    cx = ci->x - ci->xhot;
-    cy = ci->y - ci->yhot;
+    if (gr->focus_name) {
+        cx = p->win_x - ci->xhot;
+        cy = p->win_y - ci->yhot;
+    } else {
+        cx = ci->x - ci->xhot;
+        cy = ci->y - ci->yhot;
+    }
 
     x = FFMAX(cx, gr->x);
     y = FFMAX(cy, gr->y);
@@ -389,6 +412,40 @@ static void xcbgrab_update_region(AVFormatContext *s)
                          args);
 }
 
+static xcb_window_t get_window_focus(AVFormatContext *s)
+{
+  XCBGrabContext *ctx = s->priv_data;
+  xcb_window_t w = 0;
+  xcb_get_input_focus_cookie_t c;
+  xcb_get_input_focus_reply_t *r;
+
+  c = xcb_get_input_focus(ctx->conn);
+  r = xcb_get_input_focus_reply(ctx->conn, c, NULL);
+  if (r == NULL)
+    return -1;
+
+  w = r->focus;
+  free(r);
+  return w;
+}
+
+static xcb_window_t get_window_parent(AVFormatContext *s, xcb_window_t w)
+{
+  XCBGrabContext *ctx = s->priv_data;
+  xcb_query_tree_cookie_t c;
+  xcb_query_tree_reply_t *r;
+  xcb_generic_error_t **e;
+
+  c = xcb_query_tree(ctx->conn, w);
+  r = xcb_query_tree_reply(ctx->conn, c, e);
+  if (r == NULL)
+    return -1;
+
+  w = r->parent;
+  free(r);
+  return w;
+}
+
 static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
 {
     XCBGrabContext *c = s->priv_data;
@@ -400,9 +457,21 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
 
     wait_frame(s, pkt);
 
+    if (c->focus_name) {
+      xcb_window_t w = get_window_focus(s);
+      if (w != c->focus_window) {
+          return 0;
+      }
+    }
+
     if (c->follow_mouse || c->draw_mouse) {
-        pc  = xcb_query_pointer(c->conn, c->screen->root);
-        gc  = xcb_get_geometry(c->conn, c->screen->root);
+        if (c->focus_name) {
+          pc  = xcb_query_pointer(c->conn, c->grab_window);
+          gc  = xcb_get_geometry(c->conn, c->grab_window);
+        } else {
+          pc  = xcb_query_pointer(c->conn, c->screen->root);
+          gc  = xcb_get_geometry(c->conn, c->screen->root);
+        }
         p   = xcb_query_pointer_reply(c->conn, pc, NULL);
         geo = xcb_get_geometry_reply(c->conn, gc, NULL);
     }
@@ -535,6 +604,13 @@ static int create_stream(AVFormatContext *s)
 
     avpriv_set_pts_info(st, 64, 1, 1000000);
 
+    if (c->focus_name) {
+        gc  = xcb_get_geometry(c->conn, c->grab_window);
+        geo = xcb_get_geometry_reply(c->conn, gc, NULL);
+        c->width = geo->width & ~1;
+        c->height = geo->height & ~1;
+    }
+
     gc  = xcb_get_geometry(c->conn, c->screen->root);
     geo = xcb_get_geometry_reply(c->conn, gc, NULL);
 
@@ -559,6 +635,7 @@ static int create_stream(AVFormatContext *s)
     st->codecpar->height     = c->height;
 
     ret = pixfmt_from_pixmap_format(s, geo->depth, &st->codecpar->format);
+
 
     free(geo);
 
@@ -630,6 +707,14 @@ static av_cold int xcbgrab_read_header(AVFormatContext *s)
     int screen_num, ret;
     const xcb_setup_t *setup;
     char *display_name = av_strdup(s->filename);
+    if (c->focus_name = strchr(s->filename, '/')) {
+        c->focus_name[0] = '\0';
+        ++c->focus_name;
+    }
+    if (c->grab_name = strchr(c->focus_name, '/')) {
+        c->grab_name[0] = '\0';
+        ++c->grab_name;
+    }
 
     if (!display_name)
         return AVERROR(ENOMEM);
@@ -656,6 +741,28 @@ static av_cold int xcbgrab_read_header(AVFormatContext *s)
                screen_num);
         xcbgrab_read_close(s);
         return AVERROR(EIO);
+    }
+    
+    if (c->focus_name) {
+        c->focus_window = strtoul(c->focus_name, NULL, 16);
+        if (c->grab_name) {
+          if (!strcmp(c->grab_name,"this")) {
+            c->grab_window = c->focus_window;
+          } else if (!strcmp(c->grab_name,"parent")) {
+            c->grab_window = get_window_parent(s, c->focus_window);
+          } else if (!strcmp(c->grab_name,"parent2")) {
+            c->grab_window = get_window_parent(s, c->focus_window);
+            c->grab_window = get_window_parent(s, c->grab_window);
+          } else if (!strcmp(c->grab_name,"parent3")) {
+            c->grab_window = get_window_parent(s, c->focus_window);
+            c->grab_window = get_window_parent(s, c->grab_window);
+            c->grab_window = get_window_parent(s, c->grab_window);
+          } else {
+            c->grab_window = strtoul(c->grab_name, NULL, 16);
+          }
+        } else {
+          c->grab_window = get_window_parent(s, c->focus_window);
+        }
     }
 
     ret = create_stream(s);
