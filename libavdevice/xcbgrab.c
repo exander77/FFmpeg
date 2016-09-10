@@ -256,8 +256,9 @@ static int xcbgrab_frame_shm(AVFormatContext *s, AVPacket *pkt)
     xcb_shm_attach(c->conn, c->segment, id, 0);
 
     if (c->focus_name) {
-        iq  = xcb_get_image(c->conn, XCB_IMAGE_FORMAT_Z_PIXMAP, c->grab_window,
-                            0, 0, c->width, c->height, ~0);
+        iq = xcb_shm_get_image(c->conn, c->grab_window,
+                               c->x, c->y, c->width, c->height, ~0,
+                               XCB_IMAGE_FORMAT_Z_PIXMAP, c->segment, 0);
     } else {
         iq = xcb_shm_get_image(c->conn, drawable,
                                c->x, c->y, c->width, c->height, ~0,
