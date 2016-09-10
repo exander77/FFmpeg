@@ -459,8 +459,11 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
 
     if (c->focus_name) {
       xcb_window_t w = get_window_focus(s);
-      if (w != c->focus_window)
+      if (w != c->focus_window) {
+          av_log(s, AV_LOG_WARNING,
+              "Not streaming, grab window not focused, focused window 0x%08x.\n", w);
           return 0;
+      }
     }
 
     if (c->follow_mouse || c->draw_mouse) {
@@ -473,8 +476,11 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
         }
         p   = xcb_query_pointer_reply(c->conn, pc, NULL);
         geo = xcb_get_geometry_reply(c->conn, gc, NULL);
-        if (geo->width < c->width || geo->height < c->height)
+        if (geo->width < c->width || geo->height < c->height) {
+            av_log(s, AV_LOG_WARNING,
+                "Not streaming, grab window width or height lower than should be.\n");
             return 0;
+        }
     }
 
     if (c->follow_mouse && p->same_screen)
