@@ -432,10 +432,10 @@ static xcb_window_t get_window_parent(AVFormatContext *s, xcb_window_t w)
   XCBGrabContext *ctx = s->priv_data;
   xcb_query_tree_cookie_t c;
   xcb_query_tree_reply_t *r;
-  xcb_generic_error_t **e;
+  xcb_generic_error_t *e;
 
   c = xcb_query_tree(ctx->conn, w);
-  r = xcb_query_tree_reply(ctx->conn, c, e);
+  r = xcb_query_tree_reply(ctx->conn, c, &e);
   if (r == NULL)
     return -1;
 
@@ -457,9 +457,8 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
 
     if (c->focus_name) {
       xcb_window_t w = get_window_focus(s);
-      if (w != c->focus_window) {
+      if (w != c->focus_window)
           return 0;
-      }
     }
 
     if (c->follow_mouse || c->draw_mouse) {
@@ -472,6 +471,8 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
         }
         p   = xcb_query_pointer_reply(c->conn, pc, NULL);
         geo = xcb_get_geometry_reply(c->conn, gc, NULL);
+        if (geo->width < c->width || geo->height < c->height)
+            return 0;
     }
 
     if (c->follow_mouse && p->same_screen)
@@ -599,6 +600,12 @@ static int create_stream(AVFormatContext *s)
     if (c->focus_name) {
         gc  = xcb_get_geometry(c->conn, c->grab_window);
         geo = xcb_get_geometry_reply(c->conn, gc, NULL);
+        if (!geo) {
+          av_log(s, AV_LOG_ERROR,
+                 "Grab window 0x%08x does not exist.\n", 
+                 c->grab_window);
+          return AVERROR(EINVAL);
+        }
         c->width = geo->width & ~1;
         c->height = geo->height & ~1;
     }
