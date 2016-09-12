@@ -497,6 +497,8 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
             }
             if (c->repeat_frame) {
                 return xcbgrab_load_packet(s, pkt);
+            } else {
+                return 0;
             }
         }
     }
@@ -519,6 +521,8 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
             } 
             if (c->repeat_frame) {
                 return xcbgrab_load_packet(s, pkt);
+            } else {
+                return 0;
             }
         }
     }
