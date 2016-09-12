@@ -68,6 +68,7 @@ typedef struct XCBGrabContext {
     int show_region;
     int region_border;
     int centered;
+    int repeat_frame;
 
     const char *video_size;
     const char *framerate;
@@ -95,6 +96,7 @@ static const AVOption options[] = {
     { "grab_y", "Initial y coordinate.", OFFSET(y), AV_OPT_TYPE_INT, { .i64 = 0 }, 0, INT_MAX, D },
     { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), AV_OPT_TYPE_STRING, {.str = "vga" }, 0, 0, D },
     { "framerate", "", OFFSET(framerate), AV_OPT_TYPE_STRING, {.str = "ntsc" }, 0, 0, D },
+    { "repeat_frame", "Repeat last frame, when window is not active or data are not available.", OFFSET(repeat_frame), AV_OPT_TYPE_INT, { .i64 = 0 }, 0, 1, D },
     { "draw_mouse", "Draw the mouse pointer.", OFFSET(draw_mouse), AV_OPT_TYPE_INT, { .i64 = 1 }, 0, 1, D },
     { "follow_mouse", "Move the grabbing region when the mouse pointer reaches within specified amount of pixels to the edge of region.",
       OFFSET(follow_mouse), AV_OPT_TYPE_INT, { .i64 = 0 },  FOLLOW_CENTER, INT_MAX, D, "follow_mouse" },
@@ -491,7 +493,9 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
                 av_log(s, AV_LOG_WARNING,
                     "Not streaming, grab window not focused, focused window 0x%08x.\n", w);
             }
-            return xcbgrab_load_packet(s, pkt);
+            if (c->repeat_frame) {
+                return xcbgrab_load_packet(s, pkt);
+            }
         }
     }
 
@@ -511,7 +515,9 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
                 av_log(s, AV_LOG_WARNING,
                     "Not streaming, grab window width or height lower than should be.\n");
             } 
-            return xcbgrab_load_packet(s, pkt);
+            if (c->repeat_frame) {
+                return xcbgrab_load_packet(s, pkt);
+            }
         }
     }
     c->warned = 0;
@@ -534,7 +540,9 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
         xcbgrab_draw_mouse(s, pkt, p, geo);
 #endif
 
-    xcbgrab_store_packet(s, pkt);
+    if (c->repeat_frame) {
+        xcbgrab_store_packet(s, pkt);
+    }
 
     free(p);
     free(geo);
