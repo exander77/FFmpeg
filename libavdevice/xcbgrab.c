@@ -467,8 +467,12 @@ static void xcbgrab_store_packet(AVFormatContext *s, AVPacket *pkt) {
 
 static int xcbgrab_load_packet(AVFormatContext *s, AVPacket *pkt) {
     XCBGrabContext *c = s->priv_data;
+    int ret;
 
-    int ret = av_new_packet(pkt, c->size);
+    if (!c->size)
+        return 0;
+
+    ret = av_new_packet(pkt, c->size);
 
     if (!ret)
         memcpy(pkt->data, c->data, c->size);
