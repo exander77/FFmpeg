@@ -499,7 +499,7 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
             if (!c->warned) {
                 c->warned = 1;
                 av_log(s, AV_LOG_WARNING,
-                    "Not grabbing, focus window not focused, focused window is 0x%08x.\n", w);
+                       "Not grabbing, focus window not focused, focused window is 0x%08x.\n", w);
             }
             if (c->repeat_frame) {
                 return xcbgrab_load_packet(s, pkt);
@@ -510,7 +510,7 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
             if (c->warned == 1) {
                 c->warned = 0;
                 av_log(s, AV_LOG_WARNING,
-                    "Grabbing resumed.\n");
+                       "Grabbing resumed.\n");
             }
         }
     }
