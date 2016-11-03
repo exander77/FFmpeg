@@ -428,7 +428,7 @@ static xcb_window_t get_window_focus(AVFormatContext *s)
   c = xcb_get_input_focus(ctx->conn);
   r = xcb_get_input_focus_reply(ctx->conn, c, NULL);
   if (r == NULL)
-    return -1;
+      return -1;
 
   w = r->focus;
   free(r);
@@ -445,7 +445,7 @@ static xcb_window_t get_window_parent(AVFormatContext *s, xcb_window_t w)
   c = xcb_query_tree(ctx->conn, w);
   r = xcb_query_tree_reply(ctx->conn, c, &e);
   if (r == NULL)
-    return -1;
+      return -1;
 
   w = r->parent;
   free(r);
@@ -672,10 +672,10 @@ static int create_stream(AVFormatContext *s)
         gc  = xcb_get_geometry(c->conn, c->grab_window);
         geo = xcb_get_geometry_reply(c->conn, gc, NULL);
         if (!geo) {
-          av_log(s, AV_LOG_ERROR,
-                 "Grab window 0x%08x does not exist.\n", 
-                 c->grab_window);
-          return AVERROR(EINVAL);
+            av_log(s, AV_LOG_ERROR,
+                   "Grab window 0x%08x does not exist.\n", 
+                   c->grab_window);
+            return AVERROR(EINVAL);
         }
         c->width = geo->width & ~1;
         c->height = geo->height & ~1;
@@ -819,22 +819,22 @@ static av_cold int xcbgrab_read_header(AVFormatContext *s)
     if (c->focus_name) {
         c->focus_window = strtoul(c->focus_name, NULL, 16);
         if (c->grab_name) {
-          if (!strcmp(c->grab_name,"this")) {
-            c->grab_window = c->focus_window;
-          } else if (!strcmp(c->grab_name,"parent")) {
-            c->grab_window = get_window_parent(s, c->focus_window);
-          } else if (!strcmp(c->grab_name,"parent2")) {
-            c->grab_window = get_window_parent(s, c->focus_window);
-            c->grab_window = get_window_parent(s, c->grab_window);
-          } else if (!strcmp(c->grab_name,"parent3")) {
-            c->grab_window = get_window_parent(s, c->focus_window);
-            c->grab_window = get_window_parent(s, c->grab_window);
-            c->grab_window = get_window_parent(s, c->grab_window);
-          } else {
-            c->grab_window = strtoul(c->grab_name, NULL, 16);
-          }
+            if (!strcmp(c->grab_name,"this")) {
+                c->grab_window = c->focus_window;
+            } else if (!strcmp(c->grab_name,"parent")) {
+                c->grab_window = get_window_parent(s, c->focus_window);
+            } else if (!strcmp(c->grab_name,"parent2")) {
+                c->grab_window = get_window_parent(s, c->focus_window);
+                c->grab_window = get_window_parent(s, c->grab_window);
+            } else if (!strcmp(c->grab_name,"parent3")) {
+                c->grab_window = get_window_parent(s, c->focus_window);
+                c->grab_window = get_window_parent(s, c->grab_window);
+                c->grab_window = get_window_parent(s, c->grab_window);
+            } else {
+                c->grab_window = strtoul(c->grab_name, NULL, 16);
+            }
         } else {
-          c->grab_window = get_window_parent(s, c->focus_window);
+            c->grab_window = get_window_parent(s, c->focus_window);
         }
     }
 
