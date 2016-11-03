@@ -708,7 +708,6 @@ static int create_stream(AVFormatContext *s)
 
     ret = pixfmt_from_pixmap_format(s, geo->depth, &st->codecpar->format);
 
-
     free(geo);
 
     return ret;
