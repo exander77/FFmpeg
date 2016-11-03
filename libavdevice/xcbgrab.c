@@ -499,12 +499,18 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
             if (!c->warned) {
                 c->warned = 1;
                 av_log(s, AV_LOG_WARNING,
-                    "Not streaming, grab window not focused, focused window 0x%08x.\n", w);
+                    "Not grabbing, focus window not focused, focused window is 0x%08x.\n", w);
             }
             if (c->repeat_frame) {
                 return xcbgrab_load_packet(s, pkt);
             } else {
                 return 0;
+            }
+        } else {
+            if (c->warned == 1) {
+                c->warned = 0;
+                av_log(s, AV_LOG_WARNING,
+                    "Grabbing resumed.\n");
             }
         }
     }
@@ -521,18 +527,23 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
         geo = xcb_get_geometry_reply(c->conn, gc, NULL);
         if (geo->width < c->width || geo->height < c->height) {
             if (!c->warned) {     
-                c->warned = 1;
+                c->warned = 2;
                 av_log(s, AV_LOG_WARNING,
-                    "Not streaming, grab window width or height lower than should be.\n");
+                    "Not grabbing, grab window width or height lower than initial.\n");
             } 
             if (c->repeat_frame) {
                 return xcbgrab_load_packet(s, pkt);
             } else {
                 return 0;
             }
+        } else {
+            if (c->warned == 2) {
+                c->warned = 0;
+                av_log(s, AV_LOG_WARNING,
+                    "Grabbing resumed.\n");
+            }
         }
     }
-    c->warned = 0;
 
     if (c->follow_mouse && p->same_screen)
         xcbgrab_reposition(s, p, geo);
