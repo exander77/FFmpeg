@@ -422,36 +422,36 @@ static void xcbgrab_update_region(AVFormatContext *s)
 
 static xcb_window_t get_window_focus(AVFormatContext *s)
 {
-  XCBGrabContext *ctx = s->priv_data;
-  xcb_window_t w = 0;
-  xcb_get_input_focus_cookie_t c;
-  xcb_get_input_focus_reply_t *r;
+    XCBGrabContext *ctx = s->priv_data;
+    xcb_window_t w = 0;
+    xcb_get_input_focus_cookie_t c;
+    xcb_get_input_focus_reply_t *r;
 
-  c = xcb_get_input_focus(ctx->conn);
-  r = xcb_get_input_focus_reply(ctx->conn, c, NULL);
-  if (r == NULL)
-      return -1;
+    c = xcb_get_input_focus(ctx->conn);
+    r = xcb_get_input_focus_reply(ctx->conn, c, NULL);
+    if (r == NULL)
+        return -1;
 
-  w = r->focus;
-  free(r);
-  return w;
+    w = r->focus;
+    free(r);
+    return w;
 }
 
 static xcb_window_t get_window_parent(AVFormatContext *s, xcb_window_t w)
 {
-  XCBGrabContext *ctx = s->priv_data;
-  xcb_query_tree_cookie_t c;
-  xcb_query_tree_reply_t *r;
-  xcb_generic_error_t *e;
+    XCBGrabContext *ctx = s->priv_data;
+    xcb_query_tree_cookie_t c;
+    xcb_query_tree_reply_t *r;
+    xcb_generic_error_t *e;
 
-  c = xcb_query_tree(ctx->conn, w);
-  r = xcb_query_tree_reply(ctx->conn, c, &e);
-  if (r == NULL)
-      return -1;
+    c = xcb_query_tree(ctx->conn, w);
+    r = xcb_query_tree_reply(ctx->conn, c, &e);
+    if (r == NULL)
+        return -1;
 
-  w = r->parent;
-  free(r);
-  return w;
+    w = r->parent;
+    free(r);
+    return w;
 }
 
 static void xcbgrab_store_packet(AVFormatContext *s, AVPacket *pkt) {
