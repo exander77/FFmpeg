@@ -1,6 +1,8 @@
 /*
  * XCB input grabber
  * Copyright (C) 2014 Luca Barbato <lu_zero@gentoo.org>
+ * Copyright (C) 2016 Radomír Polách <rp@t4d.cz>
+ * Copyright (C) 2016 Kristýna Dudová <kd@t4d.cz>
  *
  * This file is part of FFmpeg.
  *
