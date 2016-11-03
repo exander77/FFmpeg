@@ -98,7 +98,7 @@ static const AVOption options[] = {
     { "grab_y", "Initial y coordinate.", OFFSET(y), AV_OPT_TYPE_INT, { .i64 = 0 }, 0, INT_MAX, D },
     { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), AV_OPT_TYPE_STRING, {.str = "vga" }, 0, 0, D },
     { "framerate", "", OFFSET(framerate), AV_OPT_TYPE_STRING, {.str = "ntsc" }, 0, 0, D },
-    { "repeat_frame", "Repeat last frame, when window is not active or data are not available.", OFFSET(repeat_frame), AV_OPT_TYPE_INT, { .i64 = 0 }, 0, 1, D },
+    { "repeat_frame", "Repeat last frame, when window is not active or data are not available.", OFFSET(repeat_frame), AV_OPT_TYPE_INT, { .i64 = 1 }, 0, 1, D },
     { "draw_mouse", "Draw the mouse pointer.", OFFSET(draw_mouse), AV_OPT_TYPE_INT, { .i64 = 1 }, 0, 1, D },
     { "follow_mouse", "Move the grabbing region when the mouse pointer reaches within specified amount of pixels to the edge of region.",
       OFFSET(follow_mouse), AV_OPT_TYPE_INT, { .i64 = 0 },  FOLLOW_CENTER, INT_MAX, D, "follow_mouse" },
