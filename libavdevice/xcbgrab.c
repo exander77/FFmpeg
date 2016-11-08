@@ -83,7 +83,7 @@ typedef struct XCBGrabContext {
     char *grab_name;
     xcb_window_t focus_window;
     xcb_window_t grab_window;
-    
+
     uint8_t *data;
     int size;
     int warned;
@@ -526,11 +526,11 @@ static int xcbgrab_read_packet(AVFormatContext *s, AVPacket *pkt)
         p   = xcb_query_pointer_reply(c->conn, pc, NULL);
         geo = xcb_get_geometry_reply(c->conn, gc, NULL);
         if (geo->width < c->width || geo->height < c->height) {
-            if (!c->warned) {     
+            if (!c->warned) {
                 c->warned = 2;
                 av_log(s, AV_LOG_WARNING,
                     "Not grabbing, grab window width or height lower than initial.\n");
-            } 
+            }
             if (c->repeat_frame) {
                 return xcbgrab_load_packet(s, pkt);
             } else {
@@ -584,7 +584,7 @@ static av_cold int xcbgrab_read_close(AVFormatContext *s)
 #endif
 
     xcb_disconnect(ctx->conn);
-        
+
     if (ctx->data)  {
         free(ctx->data);
     }
@@ -686,7 +686,7 @@ static int create_stream(AVFormatContext *s)
         geo = xcb_get_geometry_reply(c->conn, gc, NULL);
         if (!geo) {
             av_log(s, AV_LOG_ERROR,
-                   "Grab window 0x%08x does not exist.\n", 
+                   "Grab window 0x%08x does not exist.\n",
                    c->grab_window);
             return AVERROR(EINVAL);
         }
@@ -827,7 +827,7 @@ static av_cold int xcbgrab_read_header(AVFormatContext *s)
         xcbgrab_read_close(s);
         return AVERROR(EIO);
     }
-    
+
     if (c->focus_name) {
         c->focus_window = strtoul(c->focus_name, NULL, 16);
         if (c->grab_name) {
