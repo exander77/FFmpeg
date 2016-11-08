@@ -429,7 +429,7 @@ static xcb_window_t get_window_focus(AVFormatContext *s)
 
     c = xcb_get_input_focus(ctx->conn);
     r = xcb_get_input_focus_reply(ctx->conn, c, NULL);
-    if (r == NULL)
+    if (!r)
         return -1;
 
     w = r->focus;
@@ -446,7 +446,7 @@ static xcb_window_t get_window_parent(AVFormatContext *s, xcb_window_t w)
 
     c = xcb_query_tree(ctx->conn, w);
     r = xcb_query_tree_reply(ctx->conn, c, &e);
-    if (r == NULL)
+    if (!r)
         return -1;
 
     w = r->parent;
@@ -461,7 +461,7 @@ static void xcbgrab_store_packet(AVFormatContext *s, AVPacket *pkt) {
 
     if (c->size) {
         if (!c->data)  {
-            c->data = malloc(c->size);
+            c->data = av_malloc(c->size);
         }
         memcpy(c->data, pkt->data, c->size);
     }
