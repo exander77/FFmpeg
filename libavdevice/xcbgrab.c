@@ -288,8 +288,6 @@ static int xcbgrab_frame_shm(AVFormatContext *s, AVPacket *pkt)
                                XCB_IMAGE_FORMAT_Z_PIXMAP, c->segment, 0);
     }
 
-    xcb_shm_detach(c->conn, c->segment);
-
     img = xcb_shm_get_image_reply(c->conn, iq, &e);
 
     xcb_flush(c->conn);
