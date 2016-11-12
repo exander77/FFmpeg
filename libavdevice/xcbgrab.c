@@ -171,7 +171,7 @@ static int xcbgrab_frame(AVFormatContext *s, AVPacket *pkt)
 
     if (c->focus_name) {
         iq  = xcb_get_image(c->conn, XCB_IMAGE_FORMAT_Z_PIXMAP, c->grab_window,
-                            0, 0, c->width, c->height, ~0);
+                            c->x, c->y, c->width, c->height, ~0);
     } else {
         iq  = xcb_get_image(c->conn, XCB_IMAGE_FORMAT_Z_PIXMAP, drawable,
                             c->x, c->y, c->width, c->height, ~0);
@@ -280,7 +280,7 @@ static int xcbgrab_frame_shm(AVFormatContext *s, AVPacket *pkt)
 
     if (c->focus_name) {
         iq = xcb_shm_get_image(c->conn, c->grab_window,
-                               0, 0, c->width, c->height, ~0,
+                               c->x, c->y, c->width, c->height, ~0,
                                XCB_IMAGE_FORMAT_Z_PIXMAP, c->segment, 0);
     } else {
         iq = xcb_shm_get_image(c->conn, drawable,
