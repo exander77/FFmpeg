@@ -789,11 +789,10 @@ static av_cold int xcbgrab_read_header(AVFormatContext *s)
     char *display_name = av_strdup(s->filename);
     if (c->focus_name = strchr(s->filename, '/')) {
         c->focus_name[0] = '\0';
-        ++c->focus_name;
-    }
-    if (c->grab_name = strchr(c->focus_name, '/')) {
-        c->grab_name[0] = '\0';
-        ++c->grab_name;
+        if (c->grab_name = strchr(c->focus_name, '/')) {
+            c->grab_name[0] = '\0';
+            ++c->grab_name;
+        }
     }
     c->data = NULL;
     c->size = 0;
