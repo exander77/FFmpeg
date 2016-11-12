@@ -199,7 +199,7 @@ static int xcbgrab_frame(AVFormatContext *s, AVPacket *pkt)
     if (!ret)
         memcpy(pkt->data, data, length);
 
-    free(img);
+    av_free(img);
 
     return ret;
 }
