@@ -794,9 +794,6 @@ static av_cold int xcbgrab_read_header(AVFormatContext *s)
             ++c->grab_name;
         }
     }
-    c->data = NULL;
-    c->size = 0;
-    c->warned = 0;
 
     if (!display_name)
         return AVERROR(ENOMEM);
